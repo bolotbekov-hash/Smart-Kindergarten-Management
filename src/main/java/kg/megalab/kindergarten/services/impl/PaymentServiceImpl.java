@@ -28,12 +28,15 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public Payment addPayment(PaymentDto dto) {
-        GroupChildren gc = groupChildrenRepo.findById(dto.getGroupChildrenId()).orElseThrow(() -> new EntityNotFoundException("GroupChildren not found"));
+        GroupChildren gc = groupChildrenRepo.findById(dto.getGroupChildrenId())
+                .orElseThrow(() -> new EntityNotFoundException("GroupChildren not found"));
+
         Payment p = Payment.builder()
                 .groupChildren(gc)
                 .amount(dto.getAmount())
-                .paymentDate(dto.getPaymentDate())
+                .paymentDate(dto.getPaymentDate() != null ? dto.getPaymentDate() : LocalDate.now())
                 .build();
+
         return paymentRepo.save(p);
     }
 
@@ -47,19 +50,20 @@ public class PaymentServiceImpl implements PaymentService {
         LocalDate endOfPrevMonth = firstDayOfThisMonth.minusDays(1);
         LocalDate startOfPrevMonth = endOfPrevMonth.withDayOfMonth(1);
 
-        // check if child was active during previous month
-        if (gc.getStartDate().isAfter(endOfPrevMonth) || (gc.getEndDate() != null && gc.getEndDate().isBefore(startOfPrevMonth))) {
+        // Проверяем, был ли ребёнок активен
+        if (gc.getStartDate().isAfter(endOfPrevMonth) ||
+                (gc.getEndDate() != null && gc.getEndDate().isBefore(startOfPrevMonth))) {
             throw new EntityNotFoundException("Child was not active in previous month");
         }
 
-        Integer price = gc.getPrice();
-        if (price == null) {
-            price = gc.getGroup().getPrice() != null ? gc.getGroup().getPrice()
-                    : gc.getGroup().getGroupCategory() != null ? gc.getGroup().getGroupCategory().getPrice() : 0;
-        }
+        int price = (int) (gc.getPrice() != null ? gc.getPrice() :
+                        gc.getGroup().getPrice() != null ? gc.getGroup().getPrice() :
+                                gc.getGroup().getGroupCategory() != null ? gc.getGroup().getGroupCategory().getPrice() : 0);
 
-        List payments = paymentRepo.findByGroupChildrenIdAndPaymentDateBetween(gc.getId(), startOfPrevMonth, endOfPrevMonth);
-        Integer sumPaid = ((List<Payment>)payments).stream().mapToInt(Payment::getAmount).sum();
+        List<Payment> payments = paymentRepo.findByGroupChildrenIdAndPaymentDateBetween(
+                gc.getId(), startOfPrevMonth, endOfPrevMonth
+        );
+        int sumPaid = payments.stream().mapToInt(Payment::getAmount).sum();
 
         int due = price - sumPaid;
         return new PreviousMonthDebtDto(childId, due);

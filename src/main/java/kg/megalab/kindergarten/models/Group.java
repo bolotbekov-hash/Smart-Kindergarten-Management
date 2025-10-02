@@ -25,8 +25,8 @@ public class Group {
     @Column(nullable = false)
     String name;
     @Column(nullable = false, name = "max_children_count")
-    int maxChildren;
-    double price;
+    Integer maxChildren;
+    Double price;
     @ManyToOne
     @JoinColumn(name = "nanny_id")
     Teacher nanny;

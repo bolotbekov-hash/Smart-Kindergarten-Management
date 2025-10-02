@@ -13,9 +13,9 @@ import kg.megalab.kindergarten.repositories.GroupChildrenRepo;
 import kg.megalab.kindergarten.repositories.GroupRepo;
 import kg.megalab.kindergarten.response.GlobalResponse;
 import kg.megalab.kindergarten.services.GroupChildrenService;
-import org.apache.catalina.Group;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import kg.megalab.kindergarten.models.Group;
 
 import java.time.LocalDate;
 
@@ -34,20 +34,20 @@ public class GroupChildrenServiceImpl implements GroupChildrenService {
     @Transactional
     @Override
     public ResponseEntity<GlobalResponse> enrollChild(EnrollChildDto enrollChildDto) {
-        Group group = groupRepo.findById(enrollChildDto.getGroupId()).orElseThrow(() ->
+        Group group = (Group) groupRepo.findById(enrollChildDto.getGroupId()).orElseThrow(() ->
                 new NotFoundException("Не удалось найти группу с id - " + enrollChildDto.getGroupId()));
 
         if (!group.getGroupCategory().isActive()){
             throw new ConflictException("Категория групп не активна");
         }
         long activeChildrenCount = groupChildrenRepo.countByGroupIdAndEndDateIsNull(group.getId());
-        if (activeChildrenCount >= group.getMaxChildrenCount()){
+        if (activeChildrenCount >= group.getMaxChildren()){
             throw new ConflictException("Группа заполнена!");
         }
         Child child = childRepo.findOrCreate(enrollChildDto.getFirstName(),enrollChildDto.getLastName(),
                 enrollChildDto.getPatronymic(),enrollChildDto.getDateOfBirth());
 
-        GroupChildren activeEnrollment = groupChildrenRepo.findByChildIdAndEndDateIsNull(child.getId());
+        GroupChildren activeEnrollment = groupChildrenRepo.findByChildIdAndEndDateIsNull(child.getId()).orElseThrow();
         if(activeEnrollment != null){
             throw new ConflictException("Ребенок уже зачислен в группу: "+ activeEnrollment.getGroup().getName());
         }
@@ -55,7 +55,7 @@ public class GroupChildrenServiceImpl implements GroupChildrenService {
         enrollment.setChild(child);
         enrollment.setGroup(group);
         enrollment.setStartDate(LocalDate.now());
-        enrollment.setPrice(enrollChildDto.getPrice() != null? enrollChildDto.getPrice(): group.getPrice());
+        enrollment.setPrice(enrollChildDto.getPrice() != null ? enrollChildDto.getPrice(): group.getPrice());
 
         GroupChildren savedEnrollment = groupChildrenRepo.save(enrollment);
 

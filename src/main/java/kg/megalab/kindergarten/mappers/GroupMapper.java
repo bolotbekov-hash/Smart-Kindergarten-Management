@@ -2,7 +2,7 @@ package kg.megalab.kindergarten.mappers;
 
 import kg.megalab.kindergarten.models.dto.GroupCreateDto;
 import kg.megalab.kindergarten.models.dto.GroupDto;
-import org.apache.catalina.Group;
+import kg.megalab.kindergarten.models.Group;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;

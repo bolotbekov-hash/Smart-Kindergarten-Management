@@ -13,7 +13,7 @@ import kg.megalab.kindergarten.repositories.GroupRepo;
 import kg.megalab.kindergarten.repositories.TeacherRepo;
 import kg.megalab.kindergarten.response.GlobalResponse;
 import kg.megalab.kindergarten.services.GroupService;
-import org.apache.catalina.Group;
+import kg.megalab.kindergarten.models.Group;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -70,7 +70,7 @@ public class GroupServiceImpl implements GroupService {
             throw new  LogicException("Сотрудник с id - "+ groupCreateDto.getNannyId() + " не является няней!");
         }
 
-        Group group = groupMapper.groupCreateDtoToGroup(groupCreateDto);
+        Group group = (Group) groupMapper.groupCreateDtoToGroup(groupCreateDto);
         group.setGroupCategory(groupCategory);
         group.setTeacher(teacher);
         group.setNanny(nanny);
@@ -95,7 +95,7 @@ public class GroupServiceImpl implements GroupService {
         if (groupDto.getName() != null)
             group.setName(groupDto.getName());
 
-        group.setMaxChildrenCount(groupDto.getMaxChildrenCount());
+        group.setMaxChildren(groupDto.getMaxChildrenCount());
         group.setPrice(groupDto.getPrice());
 
         if (groupDto.getGroupCategoryId() != null) {
